@@ -8,6 +8,8 @@ usage() {
     cat <<'USAGE'
 Usage: install.sh [OPTIONS]
        install.sh --uninstall <project-name>
+       install.sh --uninstall-all
+       install.sh --list
 
 Run from a git repository to install with defaults, or use flags to override.
 
@@ -17,6 +19,8 @@ Options:
   --capacity <n>          Max concurrent sessions (default: 4)
   --session-name <name>   Name shown in claude.ai/code (default: project-name)
   --uninstall <name>      Remove service for the named project
+  --uninstall-all         Remove all installed services
+  --list                  List installed services and their status
   -h, --help              Show this help
 USAGE
 }
