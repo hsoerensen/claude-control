@@ -1,16 +1,14 @@
 # claude-control
 
-Keep `claude remote-control` running as a background service with fresh git worktrees. No SSH setup needed. Linux only.
+Keep `claude remote-control` running as a background service with fresh git worktrees. Linux only.
 
 ## Problem
 
-Claude Code's desktop and mobile apps can connect to your machine over SSH, but that requires your machine to accept incoming connections. This does not work if your machine is behind a firewall.
+Claude Code can connect to your machine over SSH, but that means your machine needs to accept incoming connections. If you're behind a firewall or NAT, that's difficult to set up.
 
 ## Solution
 
-`claude remote-control` connects out to Claude instead of waiting for incoming connections. claude-control wraps it in a systemd user service that starts on boot and restarts on failure.
-
-No custom binary. No admin privileges required.
+`claude remote-control` flips the direction — your machine connects out to Claude instead. claude-control wraps it in a systemd user service so it starts on boot and restarts on failure. Everything runs in user space, no `sudo` needed.
 
 ## Prerequisites
 
@@ -28,11 +26,11 @@ cd ~/my-project
 curl -fsSL https://raw.githubusercontent.com/hsoerensen/claude-control/main/install.sh | bash
 ```
 
-That's it. The installer detects the current git repository and uses sensible defaults for everything.
+The installer detects the git repo you're in and picks sensible defaults.
 
 ### Development
 
-If you want to modify claude-control itself:
+If you want to work on claude-control itself:
 
 ```bash
 git clone https://github.com/hsoerensen/claude-control
@@ -53,7 +51,7 @@ curl -fsSL $CLAUDE_CONTROL_REPO_BASE/install.sh | bash
 
 ## Configuration options
 
-All options have defaults. Pass flags to override:
+Everything has defaults. Pass flags to override:
 
 ```bash
 curl -fsSL .../install.sh | bash -s -- --capacity 2 --session-name "my app"
@@ -91,9 +89,9 @@ List all installed services:
 
 ## How it works
 
-1. **Background service** — systemd keeps `claude remote-control` running. If it stops for any reason, it restarts automatically after 5 seconds. No admin privileges needed.
+1. **Background service** — systemd keeps `claude remote-control` running. If it crashes, it restarts after 5 seconds.
 
-2. **Session isolation** — each session gets its own copy of the code (a git worktree), so multiple sessions do not interfere with each other. If worktree mode is not available on your account yet, the service falls back to single-session mode automatically.
+2. **Session isolation** — each session gets its own git worktree, so multiple sessions don't interfere with each other. If worktree mode isn't available on your account yet, it falls back to single-session mode.
 
 ## Uninstall
 
@@ -124,12 +122,12 @@ systemctl --user daemon-reload
 
 **"Worktree mode not available, starting in single mode"**
 
-This means your account does not have multi-session Remote Control enabled yet. The service works normally in single-session mode. When multi-session becomes available on your account, the service will switch to worktree mode automatically on the next restart.
+Your account doesn't have multi-session remote control yet. It still works fine in single-session mode. Once multi-session is enabled, it'll switch to worktree mode on the next restart.
 
 **Error: Claude Code not found**
 
-The installer checks for `claude` before proceeding. Install Claude Code and make sure it works in your terminal, then re-run the installer.
+Install Claude Code and make sure `claude --version` works, then re-run the installer.
 
 **Error: has no commits**
 
-The service needs at least one commit in your repository. Create an initial commit before installing.
+Worktrees need at least one commit to work. Make an initial commit and try again.
