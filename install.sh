@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_BASE="https://raw.githubusercontent.com/hsoerensen/claude-control/main"
+REPO_BASE="${REPO_BASE:-https://raw.githubusercontent.com/hsoerensen/claude-control/main}"
 
 usage() {
     cat <<'USAGE'
