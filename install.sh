@@ -131,20 +131,22 @@ install_linux() {
     local unit_name="claude-control-${PROJECT_NAME}.service"
     local unit_file="$unit_dir/$unit_name"
     local env_file="$config_dir/${PROJECT_NAME}.env"
+    local wrapper_file="$config_dir/wrapper-${PROJECT_NAME}.sh"
     local claude_bin
     claude_bin="$(command -v claude)"
 
     mkdir -p "$unit_dir" "$config_dir"
 
     cat > "$env_file" <<ENV
+CLAUDE_BIN=$claude_bin
 CAPACITY=$CAPACITY
 SESSION_NAME=$SESSION_NAME
 ENV
 
-    # Generate per-instance unit file from template with baked-in paths
+    cp "$TEMPLATE_DIR/templates/claude-control-wrapper.sh" "$wrapper_file"
+
     sed \
         -e "s|%%WORKING_DIR%%|${PROJECT_DIR}|g" \
-        -e "s|%%CLAUDE_BIN%%|${claude_bin}|g" \
         -e "s|%i|${PROJECT_NAME}|g" \
         "$TEMPLATE_DIR/templates/claude-control@.service" > "$unit_file"
 
