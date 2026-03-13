@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "$UNINSTALL" && -z "$PROJECT_DIR" ]]; then
+if [[ -z "$UNINSTALL" && "$LIST" == false && "$UNINSTALL_ALL" == false && -z "$PROJECT_DIR" ]]; then
     if [[ -d ".git" ]]; then
         PROJECT_DIR="$(pwd)"
     else
