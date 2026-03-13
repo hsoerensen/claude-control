@@ -174,6 +174,7 @@ uninstall_linux() {
     systemctl --user disable "$unit_name" 2>/dev/null || true
     rm -f "$unit_dir/$unit_name"
     rm -f "$config_dir/${name}.env"
+    rm -f "$config_dir/wrapper-${name}.sh"
 
     systemctl --user daemon-reload
     echo "Service removed: $unit_name"
@@ -214,13 +215,16 @@ install_macos() {
 
 uninstall_macos() {
     local name="$1"
+    local config_dir="$HOME/.config/claude-control"
     local plist_dir="$HOME/Library/LaunchAgents"
+    local log_dir="$HOME/Library/Logs/claude-control"
     local plist_name="com.claude-control.${name}.plist"
     local plist_file="$plist_dir/$plist_name"
 
     launchctl bootout "gui/$(id -u)" "$plist_file" 2>/dev/null || true
     rm -f "$plist_file"
-    rm -rf "$HOME/Library/Logs/claude-control"
+    rm -f "$config_dir/wrapper-${name}.sh"
+    rm -f "$log_dir/${name}.log"
     echo "Service removed: $plist_name"
 }
 
