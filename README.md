@@ -1,14 +1,19 @@
 # claude-control
 
-Keep `claude remote-control` running as a background service with isolated git worktrees. Linux only.
+Run Claude Code in the background on your Linux machine. Access it from the Claude mobile app or any browser — even when your server isn't reachable via SSH.
 
-## Problem
+## Why claude-control?
 
-Claude Code can connect to your machine over SSH, but that means your machine needs to accept incoming connections. If you're behind a firewall or NAT, that's difficult to set up.
+Claude Code can connect to remote machines via SSH, but that requires SSH access from the device you're on *and* the server accepting inbound connections. Your phone or tablet can't SSH into your dev server — and your server may be behind NAT or a firewall anyway.
 
-## Solution
+`claude remote-control` solves this by flipping the connection direction — your server connects *out* to Claude, so you can use it from the Claude mobile app or claude.ai in any browser. claude-control wraps it in a systemd user service so it starts on boot and restarts on failure. Each session gets its own isolated git worktree. Everything runs in user space, no `sudo` needed.
 
-`claude remote-control` flips the direction — your machine connects out to Claude instead. claude-control wraps it in a systemd user service so it starts on boot and restarts on failure. Everything runs in user space, no `sudo` needed.
+## Who is this for?
+
+- You want to use Claude Code from the Claude mobile app or any browser via claude.ai
+- Your devices don't have SSH access to your dev server
+- Your server is behind a firewall, NAT, or VPN and can't accept incoming connections
+- You want Claude Code always running and ready across multiple projects
 
 ## Prerequisites
 
@@ -89,7 +94,7 @@ List all installed services:
 
 ## How it works
 
-1. **Background service** — systemd keeps `claude remote-control` running. If it crashes, it restarts after 5 seconds.
+1. **Background service** — systemd keeps `claude remote-control` running so you can access Claude Code from any device at any time. If it crashes, it restarts after 5 seconds.
 
 2. **Session isolation** — each session gets its own git worktree, so multiple sessions don't interfere with each other. If worktree mode isn't available on your account yet, it falls back to single-session mode.
 
