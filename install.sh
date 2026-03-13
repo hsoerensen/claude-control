@@ -177,14 +177,18 @@ uninstall_linux() {
 
 install_macos() {
     local plist_dir="$HOME/Library/LaunchAgents"
+    local config_dir="$HOME/.config/claude-control"
     local log_dir="$HOME/Library/Logs/claude-control"
     local plist_name="com.claude-control.${PROJECT_NAME}.plist"
     local plist_file="$plist_dir/$plist_name"
+    local wrapper_file="$config_dir/wrapper-${PROJECT_NAME}.sh"
     local claude_bin
     claude_bin="$(command -v claude)"
     local current_path="$PATH"
 
-    mkdir -p "$plist_dir" "$log_dir"
+    mkdir -p "$plist_dir" "$config_dir" "$log_dir"
+
+    cp "$TEMPLATE_DIR/templates/claude-control-wrapper.sh" "$wrapper_file"
 
     sed \
         -e "s|%%PROJECT_NAME%%|${PROJECT_NAME}|g" \
@@ -192,6 +196,7 @@ install_macos() {
         -e "s|%%CAPACITY%%|${CAPACITY}|g" \
         -e "s|%%SESSION_NAME%%|${SESSION_NAME}|g" \
         -e "s|%%CLAUDE_BIN%%|${claude_bin}|g" \
+        -e "s|%%WRAPPER_PATH%%|${wrapper_file}|g" \
         -e "s|%%PATH%%|${current_path}|g" \
         -e "s|%%LOG_DIR%%|${log_dir}|g" \
         "$TEMPLATE_DIR/templates/com.claude-control.plist.tmpl" > "$plist_file"
