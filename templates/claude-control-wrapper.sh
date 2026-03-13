@@ -25,8 +25,21 @@ fi
 
 # Check if worktree mode was gated
 if grep -q "not yet enabled" "$stderr_file"; then
-    echo "Worktree mode not available, starting in single mode" >&2
-    exec "$CLAUDE_BIN" remote-control --name "$SESSION_NAME"
+    echo "Worktree mode not available, trying single mode" >&2
+
+    # Try single mode, capture stderr too
+    "$CLAUDE_BIN" remote-control --name "$SESSION_NAME" 2>"$stderr_file"
+    exit_code=$?
+
+    if [[ "$exit_code" -ne 0 ]] && grep -q "not yet enabled" "$stderr_file"; then
+        echo "Remote Control is not enabled for your account. Waiting to retry..." >&2
+        # Sleep long to avoid rapid restart loop — systemd will restart after this
+        sleep 300
+        exit 1
+    fi
+
+    cat "$stderr_file" >&2
+    exit "$exit_code"
 fi
 
 # Some other error — print captured stderr and exit with original code
