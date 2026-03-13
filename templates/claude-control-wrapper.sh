@@ -13,7 +13,6 @@ set +e
     --spawn worktree \
     --capacity "$CAPACITY" \
     --name "$SESSION_NAME" \
-    --no-create-session-in-dir \
     2>"$stderr_file"
 exit_code=$?
 set -e
