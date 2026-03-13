@@ -26,6 +26,8 @@ PROJECT_DIR=""
 PROJECT_NAME=""
 SESSION_NAME=""
 UNINSTALL=""
+LIST=false
+UNINSTALL_ALL=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -34,6 +36,8 @@ while [[ $# -gt 0 ]]; do
         --capacity)      CAPACITY="$2"; shift 2 ;;
         --session-name)  SESSION_NAME="$2"; shift 2 ;;
         --uninstall)     UNINSTALL="$2"; shift 2 ;;
+        --list)          LIST=true; shift ;;
+        --uninstall-all) UNINSTALL_ALL=true; shift ;;
         -h|--help)       usage; exit 0 ;;
         *)               echo "Unknown option: $1"; usage; exit 1 ;;
     esac
@@ -228,12 +232,106 @@ uninstall_macos() {
     echo "Service removed: $plist_name"
 }
 
+list_services() {
+    local config_dir="$HOME/.config/claude-control"
+    local found=0
+
+    case "$OS" in
+        linux)
+            for env_file in "$config_dir"/*.env; do
+                [[ -f "$env_file" ]] || continue
+                local name
+                name="$(basename "$env_file" .env)"
+                local unit_name="claude-control-${name}.service"
+                local status
+                if systemctl --user is-active "$unit_name" > /dev/null 2>&1; then
+                    status="running"
+                else
+                    status="stopped"
+                fi
+                printf "%-30s %s\n" "$name" "$status"
+                found=1
+            done
+            ;;
+        macos)
+            local plist_dir="$HOME/Library/LaunchAgents"
+            for plist_file in "$plist_dir"/com.claude-control.*.plist; do
+                [[ -f "$plist_file" ]] || continue
+                local name
+                name="$(basename "$plist_file" .plist)"
+                name="${name#com.claude-control.}"
+                local label="com.claude-control.${name}"
+                local status
+                if launchctl list "$label" > /dev/null 2>&1; then
+                    status="running"
+                else
+                    status="stopped"
+                fi
+                printf "%-30s %s\n" "$name" "$status"
+                found=1
+            done
+            ;;
+    esac
+
+    if [[ "$found" -eq 0 ]]; then
+        echo "No claude-control services installed."
+    fi
+}
+
+uninstall_all() {
+    local config_dir="$HOME/.config/claude-control"
+    local found=0
+
+    case "$OS" in
+        linux)
+            for env_file in "$config_dir"/*.env; do
+                [[ -f "$env_file" ]] || continue
+                local name
+                name="$(basename "$env_file" .env)"
+                uninstall_linux "$name"
+                found=1
+            done
+            ;;
+        macos)
+            local plist_dir="$HOME/Library/LaunchAgents"
+            for plist_file in "$plist_dir"/com.claude-control.*.plist; do
+                [[ -f "$plist_file" ]] || continue
+                local name
+                name="$(basename "$plist_file" .plist)"
+                name="${name#com.claude-control.}"
+                uninstall_macos "$name"
+                found=1
+            done
+            ;;
+    esac
+
+    if [[ "$found" -eq 0 ]]; then
+        echo "No claude-control services found to remove."
+    fi
+
+    # Clean up config directory if empty
+    if [[ -d "$config_dir" ]] && [[ -z "$(ls -A "$config_dir" 2>/dev/null)" ]]; then
+        rmdir "$config_dir"
+        echo "Removed empty config directory: $config_dir"
+    fi
+}
+
 # Main
 if [[ -n "$UNINSTALL" ]]; then
     case "$OS" in
         linux) uninstall_linux "$UNINSTALL" ;;
         macos) uninstall_macos "$UNINSTALL" ;;
     esac
+    exit 0
+fi
+
+if [[ "$LIST" == true ]]; then
+    list_services
+    exit 0
+fi
+
+if [[ "$UNINSTALL_ALL" == true ]]; then
+    uninstall_all
     exit 0
 fi
 
