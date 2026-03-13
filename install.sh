@@ -56,15 +56,10 @@ if [[ -z "$UNINSTALL" && "$LIST" == false && "$UNINSTALL_ALL" == false && -z "$P
     fi
 fi
 
-detect_os() {
-    case "$(uname -s)" in
-        Linux)  echo "linux" ;;
-        Darwin) echo "macos" ;;
-        *)      echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
-    esac
-}
-
-OS="$(detect_os)"
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "Error: only Linux is supported." >&2
+    exit 1
+fi
 
 resolve_template_dir() {
     if [[ -d "$SCRIPT_DIR/templates" ]]; then
@@ -77,11 +72,7 @@ resolve_template_dir() {
         TEMPLATE_DIR="$(mktemp -d)"
         trap 'rm -rf "$TEMPLATE_DIR"' EXIT
         mkdir -p "$TEMPLATE_DIR/templates"
-        case "$OS" in
-            linux) TEMPLATE="templates/claude-control@.service" ;;
-            macos) TEMPLATE="templates/com.claude-control.plist.tmpl" ;;
-        esac
-        if ! curl -fsSL "$REPO_BASE/$TEMPLATE" -o "$TEMPLATE_DIR/$TEMPLATE"; then
+        if ! curl -fsSL "$REPO_BASE/templates/claude-control@.service" -o "$TEMPLATE_DIR/templates/claude-control@.service"; then
             echo "Error: failed to fetch template from GitHub. Check your internet connection." >&2
             exit 1
         fi
@@ -188,94 +179,24 @@ uninstall_linux() {
     echo "Service removed: $unit_name"
 }
 
-install_macos() {
-    local plist_dir="$HOME/Library/LaunchAgents"
-    local config_dir="$HOME/.config/claude-control"
-    local log_dir="$HOME/Library/Logs/claude-control"
-    local plist_name="com.claude-control.${PROJECT_NAME}.plist"
-    local plist_file="$plist_dir/$plist_name"
-    local wrapper_file="$config_dir/wrapper-${PROJECT_NAME}.sh"
-    local claude_bin
-    claude_bin="$(command -v claude)"
-    local current_path="$PATH"
-
-    mkdir -p "$plist_dir" "$config_dir" "$log_dir"
-
-    cp "$TEMPLATE_DIR/templates/claude-control-wrapper.sh" "$wrapper_file"
-
-    sed \
-        -e "s|%%PROJECT_NAME%%|${PROJECT_NAME}|g" \
-        -e "s|%%PROJECT_DIR%%|${PROJECT_DIR}|g" \
-        -e "s|%%CAPACITY%%|${CAPACITY}|g" \
-        -e "s|%%SESSION_NAME%%|${SESSION_NAME}|g" \
-        -e "s|%%CLAUDE_BIN%%|${claude_bin}|g" \
-        -e "s|%%WRAPPER_PATH%%|${wrapper_file}|g" \
-        -e "s|%%PATH%%|${current_path}|g" \
-        -e "s|%%LOG_DIR%%|${log_dir}|g" \
-        "$TEMPLATE_DIR/templates/com.claude-control.plist.tmpl" > "$plist_file"
-
-    launchctl bootstrap "gui/$(id -u)" "$plist_file"
-
-    echo "Service installed and started: $plist_name"
-    echo "Logs: $log_dir/${PROJECT_NAME}.log"
-    echo "Status: launchctl list | grep claude-control"
-}
-
-uninstall_macos() {
-    local name="$1"
-    local config_dir="$HOME/.config/claude-control"
-    local plist_dir="$HOME/Library/LaunchAgents"
-    local log_dir="$HOME/Library/Logs/claude-control"
-    local plist_name="com.claude-control.${name}.plist"
-    local plist_file="$plist_dir/$plist_name"
-
-    launchctl bootout "gui/$(id -u)" "$plist_file" 2>/dev/null || true
-    rm -f "$plist_file"
-    rm -f "$config_dir/wrapper-${name}.sh"
-    rm -f "$log_dir/${name}.log"
-    echo "Service removed: $plist_name"
-}
-
 list_services() {
     local config_dir="$HOME/.config/claude-control"
     local found=0
 
-    case "$OS" in
-        linux)
-            for env_file in "$config_dir"/*.env; do
-                [[ -f "$env_file" ]] || continue
-                local name
-                name="$(basename "$env_file" .env)"
-                local unit_name="claude-control-${name}.service"
-                local status
-                if systemctl --user is-active "$unit_name" > /dev/null 2>&1; then
-                    status="running"
-                else
-                    status="stopped"
-                fi
-                printf "%-30s %s\n" "$name" "$status"
-                found=1
-            done
-            ;;
-        macos)
-            local plist_dir="$HOME/Library/LaunchAgents"
-            for plist_file in "$plist_dir"/com.claude-control.*.plist; do
-                [[ -f "$plist_file" ]] || continue
-                local name
-                name="$(basename "$plist_file" .plist)"
-                name="${name#com.claude-control.}"
-                local label="com.claude-control.${name}"
-                local status
-                if launchctl list "$label" > /dev/null 2>&1; then
-                    status="running"
-                else
-                    status="stopped"
-                fi
-                printf "%-30s %s\n" "$name" "$status"
-                found=1
-            done
-            ;;
-    esac
+    for env_file in "$config_dir"/*.env; do
+        [[ -f "$env_file" ]] || continue
+        local name
+        name="$(basename "$env_file" .env)"
+        local unit_name="claude-control-${name}.service"
+        local status
+        if systemctl --user is-active "$unit_name" > /dev/null 2>&1; then
+            status="running"
+        else
+            status="stopped"
+        fi
+        printf "%-30s %s\n" "$name" "$status"
+        found=1
+    done
 
     if [[ "$found" -eq 0 ]]; then
         echo "No claude-control services installed."
@@ -286,28 +207,13 @@ uninstall_all() {
     local config_dir="$HOME/.config/claude-control"
     local found=0
 
-    case "$OS" in
-        linux)
-            for env_file in "$config_dir"/*.env; do
-                [[ -f "$env_file" ]] || continue
-                local name
-                name="$(basename "$env_file" .env)"
-                uninstall_linux "$name"
-                found=1
-            done
-            ;;
-        macos)
-            local plist_dir="$HOME/Library/LaunchAgents"
-            for plist_file in "$plist_dir"/com.claude-control.*.plist; do
-                [[ -f "$plist_file" ]] || continue
-                local name
-                name="$(basename "$plist_file" .plist)"
-                name="${name#com.claude-control.}"
-                uninstall_macos "$name"
-                found=1
-            done
-            ;;
-    esac
+    for env_file in "$config_dir"/*.env; do
+        [[ -f "$env_file" ]] || continue
+        local name
+        name="$(basename "$env_file" .env)"
+        uninstall_linux "$name"
+        found=1
+    done
 
     if [[ "$found" -eq 0 ]]; then
         echo "No claude-control services found to remove."
@@ -322,10 +228,7 @@ uninstall_all() {
 
 # Main
 if [[ -n "$UNINSTALL" ]]; then
-    case "$OS" in
-        linux) uninstall_linux "$UNINSTALL" ;;
-        macos) uninstall_macos "$UNINSTALL" ;;
-    esac
+    uninstall_linux "$UNINSTALL"
     exit 0
 fi
 
@@ -372,12 +275,8 @@ echo "Installing claude-control for: $PROJECT_DIR"
 echo "  Project name: $PROJECT_NAME"
 echo "  Capacity: $CAPACITY"
 echo "  Session name: $SESSION_NAME"
-echo "  OS: $OS"
 echo ""
 
 merge_worktree_hook
 
-case "$OS" in
-    linux) install_linux ;;
-    macos) install_macos ;;
-esac
+install_linux
