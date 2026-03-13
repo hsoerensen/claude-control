@@ -135,9 +135,9 @@ Alternatively, use `gh auth setup-git` or a stored credential so the service can
 
 On macOS, background services do not see the same programs as your terminal. The installer saves your `PATH` at install time. If `claude` was not available when you ran the installer, re-run it after making sure `command -v claude` works in your terminal.
 
-**Error: claude CLI not found**
+**Error: Claude Code not found**
 
-The installer checks for `claude` before proceeding. Install the Claude Code CLI and make sure it works in your terminal, then re-run the installer.
+The installer checks for `claude` before proceeding. Install Claude Code and make sure it works in your terminal, then re-run the installer.
 
 **Error: has no commits**
 

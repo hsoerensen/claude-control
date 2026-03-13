@@ -228,7 +228,7 @@ if ! command -v git > /dev/null 2>&1; then
     exit 1
 fi
 if ! command -v claude > /dev/null 2>&1; then
-    echo "Error: claude CLI not found. Install it first." >&2
+    echo "Error: Claude Code not found. Install it first." >&2
     exit 1
 fi
 if ! command -v jq > /dev/null 2>&1; then
