@@ -1,0 +1,15 @@
+[Unit]
+Description=Claude Code Remote Control (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/claude-control/%i.env
+WorkingDirectory=%%WORKING_DIR%%
+ExecStart=%%CLAUDE_BIN%% remote-control --spawn worktree --capacity ${CAPACITY} --name ${SESSION_NAME} --no-create-session-in-dir
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
