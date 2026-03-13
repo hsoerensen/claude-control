@@ -38,9 +38,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$UNINSTALL" && -z "$PROJECT_DIR" ]]; then
+    if [[ -d ".git" ]]; then
+        PROJECT_DIR="$(pwd)"
+    fi
+
     echo "claude-control installer"
     echo ""
-    read -rp "Project directory: " PROJECT_DIR < /dev/tty
+    read -rp "Project directory [${PROJECT_DIR:-(none)}]: " input < /dev/tty
+    PROJECT_DIR="${input:-$PROJECT_DIR}"
     if [[ -z "$PROJECT_DIR" ]]; then
         echo "Error: project directory is required" >&2
         exit 1
