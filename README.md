@@ -8,7 +8,7 @@ Claude Code's desktop and mobile apps can connect to your machine over SSH, but 
 
 ## Solution
 
-`claude remote-control` connects out to Claude instead of waiting for incoming connections. claude-control wraps it in a systemd user service that starts on boot, restarts on failure, and pulls the latest code before each session.
+`claude remote-control` connects out to Claude instead of waiting for incoming connections. claude-control wraps it in a systemd user service that starts on boot and restarts on failure.
 
 No custom binary. No admin privileges required.
 
@@ -17,9 +17,7 @@ No custom binary. No admin privileges required.
 - `claude` CLI installed and logged in (`claude --version` must work)
 - A Claude subscription (required for remote-control)
 - `git` installed
-- `jq` installed (used by the installer to set up hooks)
 - A git repository with at least one commit
-- Git credentials (SSH key or token) that the background service can access
 
 ## Quick start
 
@@ -65,7 +63,7 @@ curl -fsSL .../install.sh | bash -s -- --capacity 2 --session-name "my app"
 |--------|---------|-------------|
 | `--project-dir <path>` | current directory | Path to the git repository |
 | `--project-name <name>` | directory basename | Name used for the service and config files |
-| `--capacity <n>` | `4` | Maximum concurrent sessions |
+| `--capacity <n>` | `8` | Maximum concurrent sessions |
 | `--session-name <name>` | project-name | Name shown in claude.ai/code |
 
 ### Changing settings after install
@@ -93,11 +91,9 @@ List all installed services:
 
 ## How it works
 
-1. **Git pull hook** — before each session starts, the service pulls the latest code from your repository so every session begins up to date.
+1. **Background service** — systemd keeps `claude remote-control` running. If it stops for any reason, it restarts automatically after 5 seconds. No admin privileges needed.
 
-2. **Background service** — systemd keeps `claude remote-control` running. If it stops for any reason, it restarts automatically after 5 seconds. No admin privileges needed.
-
-3. **Session isolation** — each session gets its own copy of the code (a git worktree), so multiple sessions do not interfere with each other. If worktree mode is not available on your account yet, the service falls back to single-session mode automatically.
+2. **Session isolation** — each session gets its own copy of the code (a git worktree), so multiple sessions do not interfere with each other. If worktree mode is not available on your account yet, the service falls back to single-session mode automatically.
 
 ## Uninstall
 
@@ -113,8 +109,6 @@ Remove all installed services at once:
 curl -fsSL https://raw.githubusercontent.com/hsoerensen/claude-control/main/install.sh | bash -s -- --uninstall-all
 ```
 
-The git pull hook in `~/.claude/settings.json` is kept because other projects may use it.
-
 ### Manual uninstall
 
 ```bash
@@ -126,22 +120,7 @@ rm ~/.config/claude-control/wrapper-my-project.sh
 systemctl --user daemon-reload
 ```
 
-The git pull hook in `~/.claude/settings.json` is kept because other projects may use it.
-
 ## Troubleshooting
-
-**Git authentication fails in the service**
-
-The background service needs access to your git credentials. The SSH agent is not automatically available to background services. Add it to the config file:
-
-```bash
-# Find your current socket
-echo $SSH_AUTH_SOCK
-# Add to ~/.config/claude-control/my-project.env
-SSH_AUTH_SOCK=/run/user/1000/ssh-agent.socket
-```
-
-Alternatively, use `gh auth setup-git` or a stored credential so the service can access git without the SSH agent.
 
 **"Worktree mode not available, starting in single mode"**
 
