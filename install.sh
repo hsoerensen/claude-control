@@ -9,8 +9,10 @@ usage() {
 Usage: install.sh [OPTIONS]
        install.sh --uninstall <project-name>
 
+Run from a git repository to install with defaults, or use flags to override.
+
 Options:
-  --project-dir <path>    Path to the git repo (required)
+  --project-dir <path>    Path to the git repo (default: current directory)
   --project-name <name>   Name for the service (default: directory basename)
   --capacity <n>          Max concurrent sessions (default: 4)
   --session-name <name>   Name shown in claude.ai/code (default: project-name)
@@ -40,31 +42,10 @@ done
 if [[ -z "$UNINSTALL" && -z "$PROJECT_DIR" ]]; then
     if [[ -d ".git" ]]; then
         PROJECT_DIR="$(pwd)"
-    fi
-
-    echo "claude-control installer"
-    echo ""
-    read -rp "Project directory [${PROJECT_DIR:-(none)}]: " input < /dev/tty
-    PROJECT_DIR="${input:-$PROJECT_DIR}"
-    if [[ -z "$PROJECT_DIR" ]]; then
-        echo "Error: project directory is required" >&2
+    else
+        echo "Error: not a git repository. Run from a git repo or use --project-dir." >&2
         exit 1
     fi
-    PROJECT_DIR="${PROJECT_DIR/#\~/$HOME}"
-
-    DEFAULT_NAME="$(basename "$(cd "$PROJECT_DIR" 2>/dev/null && pwd || echo "$PROJECT_DIR")")"
-    read -rp "Project name [$DEFAULT_NAME]: " PROJECT_NAME < /dev/tty
-    PROJECT_NAME="${PROJECT_NAME:-$DEFAULT_NAME}"
-
-    read -rp "Capacity [4]: " CAPACITY < /dev/tty
-    CAPACITY="${CAPACITY:-4}"
-    if ! [[ "$CAPACITY" =~ ^[1-9][0-9]*$ ]]; then
-        echo "Error: capacity must be a positive integer" >&2
-        exit 1
-    fi
-
-    read -rp "Session name [$PROJECT_NAME]: " SESSION_NAME < /dev/tty
-    SESSION_NAME="${SESSION_NAME:-$PROJECT_NAME}"
 fi
 
 detect_os() {
@@ -264,6 +245,10 @@ if [[ -z "$PROJECT_NAME" ]]; then
 fi
 if [[ -z "$SESSION_NAME" ]]; then
     SESSION_NAME="$PROJECT_NAME"
+fi
+if ! [[ "$CAPACITY" =~ ^[1-9][0-9]*$ ]] || (( CAPACITY > 8 )); then
+    echo "Error: capacity must be between 1 and 8" >&2
+    exit 1
 fi
 
 echo "Installing claude-control for: $PROJECT_DIR"

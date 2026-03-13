@@ -23,19 +23,14 @@ No custom binary. No admin privileges required.
 
 ## Quick start
 
+Run from your project directory:
+
 ```bash
+cd ~/my-project
 curl -fsSL https://raw.githubusercontent.com/hsoerensen/claude-control/main/install.sh | bash
 ```
 
-The installer will prompt you for your project directory, name, capacity, and session name.
-
-To skip the prompts, run from your project directory:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/hsoerensen/claude-control/main/install.sh | bash -s -- --project-dir .
-```
-
-This uses defaults for everything else (project name from directory basename, capacity 4, session name matches project name).
+That's it. The installer detects the current git repository and uses sensible defaults for everything.
 
 ### Development
 
@@ -49,20 +44,28 @@ cd claude-control
 
 ## Configuration options
 
+All options have defaults. Pass flags to override:
+
+```bash
+curl -fsSL .../install.sh | bash -s -- --capacity 2 --session-name "my app"
+```
+
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--project-dir <path>` | (required) | Path to the git repository |
+| `--project-dir <path>` | current directory | Path to the git repository |
 | `--project-name <name>` | directory basename | Name used for the service and config files |
 | `--capacity <n>` | `4` | Maximum concurrent sessions |
 | `--session-name <name>` | project-name | Name shown in claude.ai/code |
 
-On Linux, configuration is stored in `~/.config/claude-control/<project-name>.env` and can be edited directly. Restart the service after changes:
+### Changing settings after install
+
+**Linux:** Edit `~/.config/claude-control/<project-name>.env` and restart:
 
 ```bash
 systemctl --user restart claude-control-my-project.service
 ```
 
-On macOS, values are set at install time. Re-run `install.sh` to change them.
+**macOS:** Re-run the installer with the new values. The plist is at `~/Library/LaunchAgents/com.claude-control.<project-name>.plist`.
 
 ## Multi-project setup
 
