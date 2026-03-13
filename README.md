@@ -1,6 +1,6 @@
 # claude-control
 
-Keep `claude remote-control` running as a background service with fresh git worktrees. Linux only.
+Keep `claude remote-control` running as a background service with isolated git worktrees. Linux only.
 
 ## Problem
 
