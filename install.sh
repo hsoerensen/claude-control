@@ -100,33 +100,6 @@ validate_project_dir() {
     PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
 }
 
-merge_worktree_hook() {
-    local settings_file="$HOME/.claude/settings.json"
-    local hook_command="git pull --rebase >&2"
-
-    if [[ ! -f "$settings_file" ]]; then
-        mkdir -p "$HOME/.claude"
-        echo '{}' > "$settings_file"
-    fi
-
-    if jq -e '.hooks.WorktreeCreate' "$settings_file" > /dev/null 2>&1; then
-        if jq -e ".hooks.WorktreeCreate[].hooks[] | select(.command == \"$hook_command\")" "$settings_file" > /dev/null 2>&1; then
-            echo "WorktreeCreate hook already configured"
-            return
-        fi
-        local tmp
-        tmp="$(mktemp)"
-        jq ".hooks.WorktreeCreate += [{\"hooks\": [{\"type\": \"command\", \"command\": \"$hook_command\"}]}]" "$settings_file" > "$tmp"
-        mv "$tmp" "$settings_file"
-        echo "Added WorktreeCreate hook to existing hooks"
-    else
-        local tmp
-        tmp="$(mktemp)"
-        jq ".hooks.WorktreeCreate = [{\"hooks\": [{\"type\": \"command\", \"command\": \"$hook_command\"}]}]" "$settings_file" > "$tmp"
-        mv "$tmp" "$settings_file"
-        echo "Added WorktreeCreate hook"
-    fi
-}
 
 install_linux() {
     local unit_dir="$HOME/.config/systemd/user"
@@ -251,10 +224,6 @@ if ! command -v claude > /dev/null 2>&1; then
     echo "Error: Claude Code not found. Install it first." >&2
     exit 1
 fi
-if ! command -v jq > /dev/null 2>&1; then
-    echo "Error: jq is required for hook configuration. Install it first." >&2
-    exit 1
-fi
 
 resolve_template_dir
 
@@ -276,7 +245,5 @@ echo "  Project name: $PROJECT_NAME"
 echo "  Capacity: $CAPACITY"
 echo "  Session name: $SESSION_NAME"
 echo ""
-
-merge_worktree_hook
 
 install_linux
