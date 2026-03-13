@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 EnvironmentFile=%h/.config/claude-control/%i.env
 WorkingDirectory=%%WORKING_DIR%%
-ExecStart=%%CLAUDE_BIN%% remote-control --spawn worktree --capacity ${CAPACITY} --name ${SESSION_NAME} --no-create-session-in-dir
+ExecStart=/bin/bash %h/.config/claude-control/wrapper-%i.sh
 Restart=always
 RestartSec=5
 
