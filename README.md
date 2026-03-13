@@ -42,6 +42,17 @@ cd claude-control
 ./install.sh --project-dir ~/my-project
 ```
 
+To test your changes on another machine, serve the repo locally and override `REPO_BASE`:
+
+```bash
+# On your dev machine
+python3 -m http.server 8080
+
+# On the test machine
+export REPO_BASE=http://<dev-machine-ip>:8080
+curl -fsSL $REPO_BASE/install.sh | bash
+```
+
 ## Configuration options
 
 All options have defaults. Pass flags to override:
