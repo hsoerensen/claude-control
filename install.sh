@@ -246,8 +246,8 @@ fi
 if [[ -z "$SESSION_NAME" ]]; then
     SESSION_NAME="$PROJECT_NAME"
 fi
-if ! [[ "$CAPACITY" =~ ^[1-9][0-9]*$ ]] || (( CAPACITY > 8 )); then
-    echo "Error: capacity must be between 1 and 8" >&2
+if ! [[ "$CAPACITY" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Error: capacity must be a positive integer" >&2
     exit 1
 fi
 
