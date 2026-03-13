@@ -69,14 +69,18 @@ systemctl --user restart claude-control-my-project.service
 
 ## Multi-project setup
 
-Each project runs its own background service. Run `install.sh` once per project:
+Each project runs its own background service. Run the installer once per project directory:
 
 ```bash
-./install.sh --project-dir ~/projects/express --project-name express
-./install.sh --project-dir ~/projects/fastapi-app --project-name fastapi-app --capacity 2
+cd ~/projects/express && curl -fsSL .../install.sh | bash
+cd ~/projects/fastapi-app && curl -fsSL .../install.sh | bash
 ```
 
-Each service pulls from its own repository automatically.
+List all installed services:
+
+```bash
+curl -fsSL .../install.sh | bash -s -- --list
+```
 
 ## How it works
 
@@ -84,15 +88,23 @@ Each service pulls from its own repository automatically.
 
 2. **Background service** — your OS keeps `claude remote-control` running. If it stops for any reason, it restarts automatically after 5 seconds. No admin privileges needed.
 
-3. **Session isolation** — each session gets its own copy of the code (a git worktree), so multiple sessions do not interfere with each other.
+3. **Session isolation** — each session gets its own copy of the code (a git worktree), so multiple sessions do not interfere with each other. If worktree mode is not available on your account yet, the service falls back to single-session mode automatically.
 
 ## Uninstall
+
+Remove a single project:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hsoerensen/claude-control/main/install.sh | bash -s -- --uninstall my-project
 ```
 
-Stops the service and removes all related files. The git pull hook in `~/.claude/settings.json` is kept because other projects may use it.
+Remove all installed services at once:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hsoerensen/claude-control/main/install.sh | bash -s -- --uninstall-all
+```
+
+The git pull hook in `~/.claude/settings.json` is kept because other projects may use it.
 
 ### Manual uninstall
 
@@ -103,6 +115,7 @@ systemctl --user stop claude-control-my-project.service
 systemctl --user disable claude-control-my-project.service
 rm ~/.config/systemd/user/claude-control-my-project.service
 rm ~/.config/claude-control/my-project.env
+rm ~/.config/claude-control/wrapper-my-project.sh
 systemctl --user daemon-reload
 ```
 
@@ -111,7 +124,8 @@ systemctl --user daemon-reload
 ```bash
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.claude-control.my-project.plist
 rm ~/Library/LaunchAgents/com.claude-control.my-project.plist
-rm -rf ~/Library/Logs/claude-control
+rm ~/.config/claude-control/wrapper-my-project.sh
+rm ~/Library/Logs/claude-control/my-project.log
 ```
 
 The git pull hook in `~/.claude/settings.json` is kept because other projects may use it.
@@ -134,6 +148,10 @@ Alternatively, use `gh auth setup-git` or a stored credential so the service can
 **claude not found on macOS**
 
 On macOS, background services do not see the same programs as your terminal. The installer saves your `PATH` at install time. If `claude` was not available when you ran the installer, re-run it after making sure `command -v claude` works in your terminal.
+
+**"Worktree mode not available, starting in single mode"**
+
+This means your account does not have multi-session Remote Control enabled yet. The service works normally in single-session mode. When multi-session becomes available on your account, the service will switch to worktree mode automatically on the next restart.
 
 **Error: Claude Code not found**
 
