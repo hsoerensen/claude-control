@@ -77,6 +77,10 @@ resolve_template_dir() {
             echo "Error: failed to fetch template from GitHub. Check your internet connection." >&2
             exit 1
         fi
+        if ! curl -fsSL "$REPO_BASE/templates/claude-control-wrapper.sh" -o "$TEMPLATE_DIR/templates/claude-control-wrapper.sh"; then
+            echo "Error: failed to fetch wrapper script from GitHub. Check your internet connection." >&2
+            exit 1
+        fi
     fi
 }
 
