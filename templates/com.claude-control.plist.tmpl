@@ -7,15 +7,8 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>%%CLAUDE_BIN%%</string>
-        <string>remote-control</string>
-        <string>--spawn</string>
-        <string>worktree</string>
-        <string>--capacity</string>
-        <string>%%CAPACITY%%</string>
-        <string>--name</string>
-        <string>%%SESSION_NAME%%</string>
-        <string>--no-create-session-in-dir</string>
+        <string>/bin/bash</string>
+        <string>%%WRAPPER_PATH%%</string>
     </array>
 
     <key>WorkingDirectory</key>
@@ -28,6 +21,12 @@
     <dict>
         <key>PATH</key>
         <string>%%PATH%%</string>
+        <key>CLAUDE_BIN</key>
+        <string>%%CLAUDE_BIN%%</string>
+        <key>CAPACITY</key>
+        <string>%%CAPACITY%%</string>
+        <key>SESSION_NAME</key>
+        <string>%%SESSION_NAME%%</string>
     </dict>
 
     <key>StandardOutPath</key>
